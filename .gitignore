@@ -1,0 +1,18 @@
+# Object files
+*.o
+
+# Libraries
+*.lib
+*.a
+*.la
+*.so
+*.lo
+**/.libs
+
+# Shared objects
+*.so
+*.so.*
+*.dylib
+
+# Directory
+lib/build
