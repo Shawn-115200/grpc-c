@@ -1,0 +1,26 @@
+sed -i  's/SayHello3/double_stream/g'   *
+sed -i  's/SayHello2/server_stream/g'   *
+sed -i  's/SayHello1/client_stream/g'   *
+sed -i  's/SayHello/sigle_stream/g'   *
+
+
+protoc --grpc-c_out=./ --plugin=protoc-gen-grpc-c=/usr/local/bin/protoc-gen-grpc-c foo.proto;
+
+rm -rf build
+mkdir build
+cd build
+cmake ..
+make V=s -j8
+
+export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+./test_grpc server &
+./test_grpc client
+
+
+
+
+###第二种编译方法
+gcc  foo.grpc-c.c    foo.grpc-c.service.c   server2.c -o server2  -lgrpc-c -lprotobuf-c -lgrpc
+gcc  foo.grpc-c.c                           client2.c -o client2  -lgrpc-c -lprotobuf-c -lgrpc
+./server2 &
+./client2

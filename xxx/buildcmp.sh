@@ -18,6 +18,6 @@ mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=${PERFIX_PATH} ..
 make -j 4
-make install
+sudo make install
 cd ..
 
