@@ -16,7 +16,7 @@ gpr_timespec grpc_c_deadline_from_timeout (long timeout)
     } else if (timeout == 0) {
         deadline = gpr_time_0(GPR_CLOCK_MONOTONIC);
     } else {
-        deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_millis(timeout, GPR_CLOCK_MONOTONIC));
+        deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_millis(timeout, GPR_TIMESPAN));
     }
 
     return deadline;
