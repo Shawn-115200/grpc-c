@@ -1,0 +1,8 @@
+client2.c
+foo.grpc-c.c
+foo.grpc-c.h
+foo.grpc-c.service.c
+info.grpc-c.c
+info.grpc-c.h
+info.grpc-c.service.c
+server2.c
