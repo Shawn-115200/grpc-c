@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package info;
+
+// The g
+
+// GPU 状态
+message GpuStatus {
+  int64 vendor = 1; // 显卡厂商 (0: 未知 1: Intel 2: AMD 3: Nvidia)
+  double usage = 2;
+  int64 timestamp = 3; // 时间戳（毫秒）
+}
+
+// 用户请求信息
+message reqUserInfo {
+  string username = 1;  // 用户名
+  double score = 2;     // 成绩
+  int64 timestamp = 3;  // 时间戳（毫秒）
+}
+
+// 用户响应信息
+message rspUserInfo {
+  string username = 1;  // 用户名
+  double score = 2;     // 成绩
+  int64 timestamp = 3;  // 时间戳（毫秒）
+}

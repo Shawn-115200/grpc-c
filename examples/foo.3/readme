@@ -1,0 +1,9 @@
+###编译方法
+protoc --grpc-c_out=./ --plugin=protoc-gen-grpc-c=/usr/local/bin/protoc-gen-grpc-c info.proto;
+protoc --grpc-c_out=./ --plugin=protoc-gen-grpc-c=/usr/local/bin/protoc-gen-grpc-c foo.proto;
+
+rm -rf client2  server2
+gcc  foo.grpc-c.c  foo.grpc-c.service.c info.grpc-c.c  server2.c -o server2  -lgrpc-c -lprotobuf-c -lgrpc
+gcc  foo.grpc-c.c                       info.grpc-c.c  client2.c -o client2  -lgrpc-c -lprotobuf-c -lgrpc
+./server2 &
+./client2

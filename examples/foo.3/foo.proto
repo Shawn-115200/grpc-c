@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package foo;
+import "info.proto";
+
+
+// The greeting service definition.
+service Greeter {
+  // Sends a greeting
+  rpc sigle_stream (sigle_stream_req) returns (sigle_stream_rsp) {}                // [普通RPC、单向RPC];  (一应一答)客户端发送一个请求，服务器返回一个响应;  最基础的请求-响应模式
+  rpc server_stream (server_stream_req) returns (stream server_stream_rsp) {}        // [服务器.流式RPC]; 客户端发送一个请求, 服务器可以返回多个响应（流式）; 适用于服务器需要发送大量数据的场景
+  rpc client_stream (stream client_stream_req) returns (client_stream_rsp) {}        // [客户端.流式RPC]; 客户端可以发送多个请求（流式）,服务器只返回一个响应;  适用于客户端需要发送大量数据的场景
+  rpc double_stream (stream double_stream_req) returns (stream double_stream_rsp) {} // [双向.流式RPC]; 客户端和服务器都可以流式发送数据; 适用于需要实时双向通信的场景;
+}
+
+// 消息定义
+// Single stream messages
+message sigle_stream_req {
+  string name1 = 1;
+  info.reqUserInfo user_info = 2;  // 用户请求信息
+}
+
+message sigle_stream_rsp {
+  string message1 = 1;
+  info.rspUserInfo user_info = 2;  // 用户响应信息
+}
+
+// Server stream messages
+message server_stream_req {
+  string name2 = 1;
+  info.reqUserInfo user_info = 2;  // 用户请求信息
+}
+
+message server_stream_rsp {
+  string message2 = 1;
+  info.rspUserInfo user_info = 2;  // 用户响应信息
+}
+
+// Client stream messages
+message client_stream_req {
+  string name3 = 1;
+  info.reqUserInfo user_info = 2;  // 用户请求信息
+}
+
+message client_stream_rsp {
+  string message3 = 1;
+  info.rspUserInfo user_info = 2;  // 用户响应信息
+}
+
+// Double stream messages
+message double_stream_req {
+  string name4 = 1;
+  info.reqUserInfo user_info = 2;  // 用户请求信息
+}
+
+message double_stream_rsp {
+  string message4 = 1;
+  info.rspUserInfo user_info = 2;  // 用户响应信息
+}
