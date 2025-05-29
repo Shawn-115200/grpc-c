@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
@@ -8,42 +9,57 @@
 #define SOCKET_PATH "/tmp/luo.socket"
 #define SOCKET_URL "unix://" SOCKET_PATH
 
-void call_sigle_stream(grpc_c_client_t *client)
+//打印调试信息
+#define MY_DEBUG
+//              printf( "%s():%d " format "\n", __FILE__, __LINE__, ##arg);
+//              printf(format, ##arg);
+#ifdef MY_DEBUG
+#define my_debug(format, arg...)   \
+        do {                          \
+                printf( "%s" format, "[Client]: ", ##arg); \
+} while (0)
+#else
+#define my_debug(format, arg...)
+#endif /* MY_DEBUG */
+
+
+
+	void call_sigle_stream(grpc_c_client_t *client)
 {
 	int i;
 	int ret;
 	grpc_c_status_t status;
 
-	printf("%s:%u\n", __FUNCTION__, __LINE__);
+	my_debug("%s:%u\n", __FUNCTION__, __LINE__);
 	for (i = 0 ; i < 1; i++) {
 		google__protobuf__Empty empty_req;
 		google__protobuf__empty__init(&empty_req);
 		foo__sigle_stream_rsp *r = NULL;
 
-		printf("\tThis will invoke a blocking RPC\n");
+		my_debug("\tThis will invoke a blocking RPC\n");
 		ret = foo__greeter__sigle_stream__sync(client, NULL, 0, &empty_req, &r, &status,
 											   -1);
 		if (ret) {
-			printf("call failed! %d\n", ret);
+			my_debug("call failed! %d\n", ret);
 			break;
 		}
 
 		if (status.code == GRPC_STATUS_OK) {
-			printf("RPC succeeded with message: %s\n", status.message);
+			my_debug("RPC succeeded with message: %s\n", status.message);
 			if (r) {
-				printf("%s: Received response: %s\n", __FUNCTION__, r->message1);
+				my_debug("%s: Received response: %s\n", __FUNCTION__, r->message1);
 				if (r->user_info) {
-					printf("Server User: %s, Score: %.2f\n", r->user_info->username,
-						   r->user_info->score);
+					my_debug("Server User: %s, Score: %.2f\n", r->user_info->username,
+							 r->user_info->score);
 				}
 				foo__sigle_stream_rsp_free(r);
 			}
 		} else {
-			printf("RPC failed with code %d: %s\n", status.code, status.message);
+			my_debug("RPC failed with code %d: %s\n", status.code, status.message);
 		}
 	}
 
-	printf("%s: Total Count %d\n", __FUNCTION__, i);
+	my_debug("%s: Total Count %d\n", __FUNCTION__, i);
 }
 
 void call_sigle_stream2(grpc_c_client_t *client)
@@ -52,7 +68,7 @@ void call_sigle_stream2(grpc_c_client_t *client)
 	int ret;
 	grpc_c_status_t status;
 
-	printf("%s:%u\n", __FUNCTION__, __LINE__);
+	my_debug("%s:%u\n", __FUNCTION__, __LINE__);
 	for (i = 0 ; i < 1; i++) {
 		foo__sigle_stream_req h;
 		foo__sigle_stream_req__init(&h);
@@ -69,11 +85,11 @@ void call_sigle_stream2(grpc_c_client_t *client)
 		h.user_info->score = 88.5;
 		h.user_info->timestamp = time(NULL) * 1000;
 
-		printf("\tThis will invoke a blocking RPC\n");
+		my_debug("\tThis will invoke a blocking RPC\n");
 		ret = foo__greeter__sigle_stream2__sync(client, NULL, 0, &h, &empty_rsp,
 												&status, -1);
 		if (ret) {
-			printf("call failed! %d\n", ret);
+			my_debug("call failed! %d\n", ret);
 			if (h.user_info) {
 				free(h.user_info);
 			}
@@ -81,13 +97,13 @@ void call_sigle_stream2(grpc_c_client_t *client)
 		}
 
 		if (status.code == GRPC_STATUS_OK) {
-			printf("RPC succeeded with message: %s\n", status.message);
-			printf("%s: Received empty response\n", __FUNCTION__);
+			my_debug("RPC succeeded with message: %s\n", status.message);
+			my_debug("%s: Received empty response\n", __FUNCTION__);
 			if (empty_rsp) {
 				google__protobuf__empty__free_unpacked(empty_rsp, NULL);
 			}
 		} else {
-			printf("RPC failed with code %d: %s\n", status.code, status.message);
+			my_debug("RPC failed with code %d: %s\n", status.code, status.message);
 		}
 
 		if (h.user_info) {
@@ -95,7 +111,7 @@ void call_sigle_stream2(grpc_c_client_t *client)
 		}
 	}
 
-	printf("%s: Total Count %d\n", __FUNCTION__, i);
+	my_debug("%s: Total Count %d\n", __FUNCTION__, i);
 }
 
 void call_client_stream(grpc_c_client_t *client)
@@ -105,10 +121,10 @@ void call_client_stream(grpc_c_client_t *client)
 	grpc_c_status_t   status;
 	grpc_c_context_t *context;
 
-	printf("%s:%u\n", __FUNCTION__, __LINE__);
+	my_debug("%s:%u\n", __FUNCTION__, __LINE__);
 	ret = foo__greeter__client_stream__stream(client, NULL, 0, &context, -1);
 	if (ret) {
-		printf("stream connect failed! %d\n", ret);
+		my_debug("stream connect failed! %d\n", ret);
 		return;
 	}
 
@@ -129,42 +145,42 @@ void call_client_stream(grpc_c_client_t *client)
 	for (i = 0 ; i < 10 ; i++) {
 		ret = grpc_c_write(context, &h, 0, -1);
 		if (ret) {
-			printf("stream write failed! %d\n", ret);
+			my_debug("stream write failed! %d\n", ret);
 			break;
 		}
 	}
 
 	ret = grpc_c_write_done(context, 0, -1);
 	if (ret) {
-		printf("stream write done failed! %d\n", ret);
+		my_debug("stream write done failed! %d\n", ret);
 	}
 
 	foo__client_stream_rsp *r;
 
 	ret = grpc_c_read(context, (void **)&r, 0, -1);
 	if (ret) {
-		printf("stream read failed! %d\n", ret);
+		my_debug("stream read failed! %d\n", ret);
 	} else {
-		printf("%s: Received response: %s\n", __FUNCTION__, r->message3);
+		my_debug("%s: Received response: %s\n", __FUNCTION__, r->message3);
 		if (r->user_info) {
-			printf("Server User: %s, Score: %.2f\n", r->user_info->username,
-				   r->user_info->score);
+			my_debug("Server User: %s, Score: %.2f\n", r->user_info->username,
+					 r->user_info->score);
 		}
 		foo__client_stream_rsp_free(r);
 	}
 
 	ret = grpc_c_finish(context, &status, 0);
 	if (ret) {
-		printf("stream finish failed! %d\n", ret);
+		my_debug("stream finish failed! %d\n", ret);
 	} else {
 		if (status.code == GRPC_STATUS_OK) {
-			printf("Stream RPC succeeded with message: %s\n", status.message);
+			my_debug("Stream RPC succeeded with message: %s\n", status.message);
 		} else {
-			printf("Stream RPC failed with code %d: %s\n", status.code, status.message);
+			my_debug("Stream RPC failed with code %d: %s\n", status.code, status.message);
 		}
 	}
 
-	printf("%s: Total Count %d\n", __FUNCTION__, i);
+	my_debug("%s: Total Count %d\n", __FUNCTION__, i);
 }
 
 void call_server_stream(grpc_c_client_t *client)
@@ -174,10 +190,10 @@ void call_server_stream(grpc_c_client_t *client)
 	grpc_c_status_t   status;
 	grpc_c_context_t *context;
 
-	printf("%s:%u\n", __FUNCTION__, __LINE__);
+	my_debug("%s:%u\n", __FUNCTION__, __LINE__);
 	ret = foo__greeter__server_stream__stream(client, NULL, 0, &context, -1);
 	if (ret) {
-		printf("stream connect failed! %d\n", ret);
+		my_debug("stream connect failed! %d\n", ret);
 		return;
 	}
 
@@ -197,12 +213,12 @@ void call_server_stream(grpc_c_client_t *client)
 
 	ret = grpc_c_write(context, &h, 0, -1);
 	if (ret) {
-		printf("stream write failed! %d\n", ret);
+		my_debug("stream write failed! %d\n", ret);
 	}
 
 	ret = grpc_c_write_done(context, 0, -1);
 	if (ret) {
-		printf("stream write done failed! %d\n", ret);
+		my_debug("stream write done failed! %d\n", ret);
 	}
 
 	for (i = 0 ;; i++) {
@@ -213,26 +229,26 @@ void call_server_stream(grpc_c_client_t *client)
 			break;
 		}
 
-		printf("%s: Received response: %s\n", __FUNCTION__, r->message2);
+		my_debug("%s: Received response: %s\n", __FUNCTION__, r->message2);
 		if (r->user_info) {
-			printf("Server User: %s, Score: %.2f\n", r->user_info->username,
-				   r->user_info->score);
+			my_debug("Server User: %s, Score: %.2f\n", r->user_info->username,
+					 r->user_info->score);
 		}
 		foo__server_stream_rsp_free(r);
 	}
 
 	ret = grpc_c_finish(context, &status, 0);
 	if (ret) {
-		printf("stream finish failed! %d\n", ret);
+		my_debug("stream finish failed! %d\n", ret);
 	} else {
 		if (status.code == GRPC_STATUS_OK) {
-			printf("Stream RPC succeeded with message: %s\n", status.message);
+			my_debug("Stream RPC succeeded with message: %s\n", status.message);
 		} else {
-			printf("Stream RPC failed with code %d: %s\n", status.code, status.message);
+			my_debug("Stream RPC failed with code %d: %s\n", status.code, status.message);
 		}
 	}
 
-	printf("%s: Total Count %d\n", __FUNCTION__, i);
+	my_debug("%s: Total Count %d\n", __FUNCTION__, i);
 }
 
 
@@ -243,10 +259,10 @@ void call_double_stream(grpc_c_client_t *client)
 	grpc_c_status_t   status;
 	grpc_c_context_t *context;
 
-	printf("%s:%u\n", __FUNCTION__, __LINE__);
+	my_debug("%s:%u\n", __FUNCTION__, __LINE__);
 	ret = foo__greeter__double_stream__stream(client, NULL, 0, &context, -1);
 	if (ret) {
-		printf("stream connect failed! %d\n", ret);
+		my_debug("stream connect failed! %d\n", ret);
 		return;
 	}
 
@@ -267,7 +283,7 @@ void call_double_stream(grpc_c_client_t *client)
 	for (i = 0 ; i < 10 ; i++) {
 		ret = grpc_c_write(context, &h, 0, -1);
 		if (ret) {
-			printf("stream write failed! %d\n", ret);
+			my_debug("stream write failed! %d\n", ret);
 			break;
 		}
 
@@ -275,35 +291,35 @@ void call_double_stream(grpc_c_client_t *client)
 
 		ret = grpc_c_read(context, (void **)&r, 0, -1);
 		if (ret) {
-			printf("stream read failed! %d\n", ret);
+			my_debug("stream read failed! %d\n", ret);
 			break;
 		}
 
-		printf("%s: Received response: %s\n", __FUNCTION__, r->message4);
+		my_debug("%s: Received response: %s\n", __FUNCTION__, r->message4);
 		if (r->user_info) {
-			printf("Server User: %s, Score: %.2f\n", r->user_info->username,
-				   r->user_info->score);
+			my_debug("Server User: %s, Score: %.2f\n", r->user_info->username,
+					 r->user_info->score);
 		}
 		foo__double_stream_rsp_free(r);
 	}
 
 	ret = grpc_c_write_done(context, 0, -1);
 	if (ret) {
-		printf("stream write done failed! %d\n", ret);
+		my_debug("stream write done failed! %d\n", ret);
 	}
 
 	ret = grpc_c_finish(context, &status, 0);
 	if (ret) {
-		printf("stream finish failed! %d\n", ret);
+		my_debug("stream finish failed! %d\n", ret);
 	} else {
 		if (status.code == GRPC_STATUS_OK) {
-			printf("Stream RPC succeeded with message: %s\n", status.message);
+			my_debug("Stream RPC succeeded with message: %s\n", status.message);
 		} else {
-			printf("Stream RPC failed with code %d: %s\n", status.code, status.message);
+			my_debug("Stream RPC failed with code %d: %s\n", status.code, status.message);
 		}
 	}
 
-	printf("%s: Total Count %d\n", __FUNCTION__, i);
+	my_debug("%s: Total Count %d\n", __FUNCTION__, i);
 }
 
 
@@ -320,7 +336,7 @@ int foo_client()
 	 * Initialize grpc-c library to be used with vanilla grpc
 	 */
 	grpc_c_init();
-	printf("%s:%u\n", __FUNCTION__, __LINE__);
+	my_debug("%s:%u\n", __FUNCTION__, __LINE__);
 
 	/*
 	 * Create a client object with client name as foo client to be talking to
@@ -340,10 +356,11 @@ int foo_client()
 			grpc_c_client_stop(client);
 			grpc_c_client_wait(client);
 			grpc_c_client_free(client);
-			printf("\tis not NULL\n");
+			my_debug("\tis not NULL\n");
 			break; // 成功连接后退出循环
 		} else {
-			printf("Failed to connect to server. Retrying in %d seconds...\n", retry_delay);
+			my_debug("Failed to connect to server. Retrying in %d seconds...\n",
+					 retry_delay);
 			sleep(retry_delay); // 等待一段时间后重试
 			retry_count++;
 		}
@@ -353,7 +370,7 @@ int foo_client()
 	}
 
 	if (retry_count == max_retries) {
-		printf("Failed to connect to server after %d retries.\n", max_retries);
+		my_debug("Failed to connect to server after %d retries.\n", max_retries);
 	}
 
 	grpc_c_shutdown();

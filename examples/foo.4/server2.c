@@ -13,8 +13,24 @@
 static grpc_c_server_t *test_server;
 static volatile sig_atomic_t g_running = 1;
 
+
+//打印调试信息
+#define MY_DEBUG
+//              printf( "%s():%d " format "\n", __FILE__, __LINE__, ##arg);
+//              printf(format, ##arg);
+#ifdef MY_DEBUG
+#define my_debug(format, arg...)   \
+        do {                          \
+                printf( "%s" format, "[Server]: ", ##arg); \
+} while (0)
+#else
+#define my_debug(format, arg...)
+#endif /* MY_DEBUG */
+
+
+
 // 清理函数
-static void cleanup(void)
+	static void cleanup(void)
 {
 	if (test_server) {
 		// 先停止服务器
@@ -27,13 +43,13 @@ static void cleanup(void)
 	}
 	// 删除socket文件
 	unlink(SOCKET_PATH);
-	printf("Server cleanup completed\n");
+	my_debug("Server cleanup completed\n");
 }
 
 // 信号处理函数
 static void signal_handler(int signo)
 {
-	printf("\nReceived signal %d, cleaning up...\n", signo);
+	my_debug("Received signal %d, cleaning up...\n", signo);
 	g_running = 0;
 }
 
@@ -46,12 +62,12 @@ void foo__greeter__sigle_stream_cb(grpc_c_context_t *context)
 	Google__Protobuf__Empty *empty_req = NULL;
 	grpc_c_status_t status;
 
-	printf("%s:%u\n", __FUNCTION__, __LINE__);
+	my_debug("%s:%u\n", __FUNCTION__, __LINE__);
 	/*
 	 * Read incoming message
 	 */
 	if (grpc_c_read(context, (void **)&empty_req, 0, -1)) {
-		printf("Failed to read data from client\n");
+		my_debug("Failed to read data from client\n");
 		status.code = GRPC_STATUS_INTERNAL;
 		snprintf(status.message, sizeof(status.message), "Failed to read request data");
 		grpc_c_finish(context, &status, 0);
@@ -87,7 +103,7 @@ void foo__greeter__sigle_stream_cb(grpc_c_context_t *context)
 	 */
 	ret = grpc_c_write(context, &r, 0, -1);
 	if (ret) {
-		printf("Failed to write %d\n", ret);
+		my_debug("Failed to write %d\n", ret);
 		status.code = GRPC_STATUS_INTERNAL;
 		snprintf(status.message, sizeof(status.message), "Failed to write response");
 		grpc_c_finish(context, &status, 0);
@@ -101,7 +117,7 @@ void foo__greeter__sigle_stream_cb(grpc_c_context_t *context)
 	 * Finish response for RPC
 	 */
 	if (grpc_c_finish(context, &status, 0)) {
-		printf("Failed to write status\n");
+		my_debug("Failed to write status\n");
 	}
 
 cleanup:
@@ -120,7 +136,7 @@ void foo__greeter__client_stream_cb(grpc_c_context_t *context)
 	foo__client_stream_rsp r;
 	foo__client_stream_rsp__init(&r);
 
-	printf("%s:%u\n", __FUNCTION__, __LINE__);
+	my_debug("%s:%u\n", __FUNCTION__, __LINE__);
 
 	buf[0] = '\0';
 	snprintf(buf, 1024, "hello, world! from server.");
@@ -144,16 +160,17 @@ void foo__greeter__client_stream_cb(grpc_c_context_t *context)
 		if (ret) {
 			break;
 		}
-		printf("%s: Received request: %s\n", __FUNCTION__, h->name3);
+		my_debug("%s: Received request: %s\n", __FUNCTION__, h->name3);
 		if (h->user_info) {
-			printf("User: %s, Score: %.2f\n", h->user_info->username, h->user_info->score);
+			my_debug("User: %s, Score: %.2f\n", h->user_info->username,
+					 h->user_info->score);
 		}
 		foo__client_stream_req_free(h);
 	}
 
 	ret = grpc_c_write(context, &r, 0, -1);
 	if (ret) {
-		printf("Failed to write %d\n", ret);
+		my_debug("Failed to write %d\n", ret);
 		status.code = GRPC_STATUS_INTERNAL;
 		snprintf(status.message, sizeof(status.message), "Failed to write response");
 		grpc_c_finish(context, &status, 0);
@@ -164,7 +181,7 @@ void foo__greeter__client_stream_cb(grpc_c_context_t *context)
 	snprintf(status.message, sizeof(status.message), "Success");
 
 	if (grpc_c_finish(context, &status, 0)) {
-		printf("Failed to write status\n");
+		my_debug("Failed to write status\n");
 	}
 }
 
@@ -175,12 +192,12 @@ void foo__greeter__server_stream_cb(grpc_c_context_t *context)
 	foo__server_stream_req *h = NULL;
 	grpc_c_status_t status;
 
-	printf("%s:%u\n", __FUNCTION__, __LINE__);
+	my_debug("%s:%u\n", __FUNCTION__, __LINE__);
 	/*
 	 * Read incoming message into h
 	 */
 	if (grpc_c_read(context, (void **)&h, 0, -1)) {
-		printf("Failed to read data from client\n");
+		my_debug("Failed to read data from client\n");
 		status.code = GRPC_STATUS_INTERNAL;
 		snprintf(status.message, sizeof(status.message), "Failed to read request data");
 		grpc_c_finish(context, &status, 0);
@@ -188,9 +205,10 @@ void foo__greeter__server_stream_cb(grpc_c_context_t *context)
 	}
 
 	if (h) {
-		printf("%s: Received request: %s\n", __FUNCTION__, h->name2);
+		my_debug("%s: Received request: %s\n", __FUNCTION__, h->name2);
 		if (h->user_info) {
-			printf("User: %s, Score: %.2f\n", h->user_info->username, h->user_info->score);
+			my_debug("User: %s, Score: %.2f\n", h->user_info->username,
+					 h->user_info->score);
 		}
 		foo__server_stream_req_free(h);
 	}
@@ -222,7 +240,7 @@ void foo__greeter__server_stream_cb(grpc_c_context_t *context)
 	for (i = 0; i < 10; i++) {
 		ret = grpc_c_write(context, &r, 0, -1);
 		if (ret) {
-			printf("Failed to write %d\n", ret);
+			my_debug("Failed to write %d\n", ret);
 			status.code = GRPC_STATUS_INTERNAL;
 			snprintf(status.message, sizeof(status.message), "Failed to write response");
 			grpc_c_finish(context, &status, 0);
@@ -234,7 +252,7 @@ void foo__greeter__server_stream_cb(grpc_c_context_t *context)
 	snprintf(status.message, sizeof(status.message), "Success");
 
 	if (grpc_c_finish(context, &status, 0)) {
-		printf("Failed to write status\n");
+		my_debug("Failed to write status\n");
 	}
 }
 
@@ -248,7 +266,7 @@ void foo__greeter__double_stream_cb(grpc_c_context_t *context)
 	foo__double_stream_rsp r;
 	foo__double_stream_rsp__init(&r);
 
-	printf("%s:%u\n", __FUNCTION__, __LINE__);
+	my_debug("%s:%u\n", __FUNCTION__, __LINE__);
 
 	for (;;) {
 		ret = grpc_c_read(context, (void **)&h, 0, -1);
@@ -256,9 +274,10 @@ void foo__greeter__double_stream_cb(grpc_c_context_t *context)
 			break;
 		}
 
-		printf("%s: Received request: %s\n", __FUNCTION__, h->name4);
+		my_debug("%s: Received request: %s\n", __FUNCTION__, h->name4);
 		if (h->user_info) {
-			printf("User: %s, Score: %.2f\n", h->user_info->username, h->user_info->score);
+			my_debug("User: %s, Score: %.2f\n", h->user_info->username,
+					 h->user_info->score);
 		}
 		snprintf(buf, 1024, "hello, %s! from server.", h->name4);
 		r.message4 = buf;
@@ -281,7 +300,7 @@ void foo__greeter__double_stream_cb(grpc_c_context_t *context)
 
 		ret = grpc_c_write(context, &r, 0, -1);
 		if (ret) {
-			printf("Failed to write %d\n", ret);
+			my_debug("Failed to write %d\n", ret);
 			status.code = GRPC_STATUS_INTERNAL;
 			snprintf(status.message, sizeof(status.message), "Failed to write response");
 			grpc_c_finish(context, &status, 0);
@@ -293,7 +312,7 @@ void foo__greeter__double_stream_cb(grpc_c_context_t *context)
 	snprintf(status.message, sizeof(status.message), "Success");
 
 	if (grpc_c_finish(context, &status, 0)) {
-		printf("Failed to write status\n");
+		my_debug("Failed to write status\n");
 	}
 }
 
@@ -303,12 +322,12 @@ void foo__greeter__sigle_stream2_cb(grpc_c_context_t *context)
 	foo__sigle_stream_req *h = NULL;
 	grpc_c_status_t status;
 
-	printf("%s:%u\n", __FUNCTION__, __LINE__);
+	my_debug("%s:%u\n", __FUNCTION__, __LINE__);
 	/*
 	 * Read incoming message into h
 	 */
 	if (grpc_c_read(context, (void **)&h, 0, -1)) {
-		printf("Failed to read data from client\n");
+		my_debug("Failed to read data from client\n");
 		status.code = GRPC_STATUS_INTERNAL;
 		snprintf(status.message, sizeof(status.message), "Failed to read request data");
 		grpc_c_finish(context, &status, 0);
@@ -316,9 +335,10 @@ void foo__greeter__sigle_stream2_cb(grpc_c_context_t *context)
 	}
 
 	if (h) {
-		printf("%s: Received request: %s\n", __FUNCTION__, h->name1);
+		my_debug("%s: Received request: %s\n", __FUNCTION__, h->name1);
 		if (h->user_info) {
-			printf("User: %s, Score: %.2f\n", h->user_info->username, h->user_info->score);
+			my_debug("User: %s, Score: %.2f\n", h->user_info->username,
+					 h->user_info->score);
 		}
 	}
 
@@ -333,7 +353,7 @@ void foo__greeter__sigle_stream2_cb(grpc_c_context_t *context)
 	 */
 	ret = grpc_c_write(context, &empty_rsp, 0, -1);
 	if (ret) {
-		printf("Failed to write %d\n", ret);
+		my_debug("Failed to write %d\n", ret);
 		status.code = GRPC_STATUS_INTERNAL;
 		snprintf(status.message, sizeof(status.message), "Failed to write response");
 		grpc_c_finish(context, &status, 0);
@@ -344,7 +364,7 @@ void foo__greeter__sigle_stream2_cb(grpc_c_context_t *context)
 	snprintf(status.message, sizeof(status.message), "Success");
 
 	if (grpc_c_finish(context, &status, 0)) {
-		printf("Failed to write status\n");
+		my_debug("Failed to write status\n");
 	}
 
 cleanup:
@@ -371,7 +391,7 @@ int foo_server()
 	struct stat st;
 	if (stat(SOCKET_PATH, &st) == 0) {
 		if (unlink(SOCKET_PATH) != 0) {
-			printf("Failed to remove existing socket file\n");
+			my_debug("Failed to remove existing socket file\n");
 			exit(1);
 		}
 	}
@@ -380,14 +400,14 @@ int foo_server()
 	 * Initialize grpc-c library to be used with vanilla gRPC
 	 */
 	grpc_c_init();
-	printf("%s:%u\n", __FUNCTION__, __LINE__);
+	my_debug("%s:%u\n", __FUNCTION__, __LINE__);
 
 	/*
 	 * Create server object
 	 */
 	test_server = grpc_c_server_create(SOCKET_URL, NULL, NULL);
 	if (test_server == NULL) {
-		printf("Failed to create server\n");
+		my_debug("Failed to create server\n");
 		exit(1);
 	}
 
